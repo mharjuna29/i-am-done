@@ -1,0 +1,11 @@
+{
+  "name": "i-am-done",
+  "version": "1.0.0",
+  "description": "Hafalan Tracker for Ar-Rahman & Rathib Al-Haddad",
+  "scripts": {
+    "dev": "npx serve public"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0"
+  }
+}
