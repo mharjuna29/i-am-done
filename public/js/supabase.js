@@ -1,41 +1,33 @@
-// ==================== SUPABASE CONFIGURATION ====================
-// Ganti dengan kredensial Supabase Anda
-const SUPABASE_URL = 'https://pybxpprdwxylxdmojppy.supabase.co/rest/v1/';
-const SUPABASE_ANON_KEY = 'sb_publishable_HMRlCIYcJbPg7czxTDr9JQ_wBhfyOhM';
+window.App = window.App || {};
 
-// Initialize Supabase client
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+(function initSupabase(App) {
+  const SUPABASE_URL = 'https://pybxpprdwxylxdmojppy.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB5YnhwcHJkd3h5bHhkbW9qcHB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NDA3ODksImV4cCI6MjA5NDExNjc4OX0.g8KvklNTMnrrgUCXJUtfa98GZnL2dGyLR5KJ2tIsjGM';
 
-// ==================== STATE MANAGEMENT ====================
-let currentUser = null;
-let currentSession = null;
-let userSurahs = [];
-let allSurahs = [];
-let dailyProgress = [];
+  App.state = {
+    currentUser: null,
+    userSurahs: [],
+    allSurahs: [],
+    dailyProgress: [],
+    serverDay: null
+  };
 
-// ==================== HELPER FUNCTIONS ====================
-function showLoading(show = true) {
-  const overlay = document.getElementById('loadingOverlay');
-  if (overlay) {
-    overlay.style.display = show ? 'flex' : 'none';
+  App.getToday = function getToday() {
+    if (App.state.serverDay?.appDate) {
+      return App.state.serverDay.appDate;
+    }
+
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  if (!window.supabase) {
+    document.body.textContent = 'Supabase client gagal dimuat. Periksa koneksi atau CDN.';
+    return;
   }
-}
 
-function showToast(message, type = 'info') {
-  const container = document.getElementById('toastContainer');
-  const toast = document.createElement('div');
-  toast.className = `toast toast-${type}`;
-  toast.textContent = message;
-  container.appendChild(toast);
-  
-  setTimeout(() => {
-    toast.style.animation = 'slideOut 0.3s ease-out';
-    setTimeout(() => toast.remove(), 300);
-  }, 3000);
-}
-
-function formatDate(date) {
-  const d = new Date(date);
-  const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-  return `${days[d.getDay()]}, ${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
-}
+  App.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+})(window.App);

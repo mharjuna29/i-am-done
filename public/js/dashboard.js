@@ -1,439 +1,246 @@
-// ==================== DASHBOARD FUNCTIONS ====================
-async function loadDashboard() {
-  if (!currentUser) return;
-  
-  showLoading(true);
-  await loadUserData(); // Refresh data
-  
-  // Calculate statistics
-  const stats = calculateStatistics();
-  renderStatsGrid(stats);
-  
-  // Render today's surahs
-  await renderTodaySurahs();
-  
-  // Render recent activity
-  renderRecentActivity();
-  
-  showLoading(false);
-}
+window.App = window.App || {};
 
-function calculateStatistics() {
-  const stats = {
-    totalCompleted: 0,
-    totalHoliday: 0,
-    currentStreak: 0,
-    bestStreak: 0,
-    totalDays: 0,
-    completionRate: 0
-  };
-  
-  // Group progress by surah
-  const surahProgress = {};
-  
-  for (const progress of dailyProgress) {
-    if (progress.status === 'Selesai') {
-      stats.totalCompleted++;
-    } else if (progress.status === 'Libur') {
-      stats.totalHoliday++;
-    }
-    
-    if (!surahProgress[progress.surah_id]) {
-      surahProgress[progress.surah_id] = { completed: 0, total: 0 };
-    }
-    surahProgress[progress.surah_id].total++;
-    if (progress.status === 'Selesai') {
-      surahProgress[progress.surah_id].completed++;
-    }
-  }
-  
-  stats.totalDays = dailyProgress.length;
-  stats.completionRate = stats.totalDays > 0 
-    ? Math.round((stats.totalCompleted / stats.totalDays) * 100) 
-    : 0;
-  
-  // Calculate streak (simplified - check consecutive days)
-  let streak = 0;
-  const today = new Date().toISOString().split('T')[0];
-  const sortedProgress = [...dailyProgress].sort((a, b) => 
-    new Date(b.progress_date) - new Date(a.progress_date)
-  );
-  
-  for (let i = 0; i < sortedProgress.length; i++) {
-    if (sortedProgress[i].status === 'Selesai') {
-      streak++;
-    } else if (sortedProgress[i].status !== 'Libur') {
-      break;
-    }
-  }
-  stats.currentStreak = streak;
-  stats.bestStreak = Math.max(streak, userSurahs.reduce((max, s) => Math.max(max, s.best_streak), 0));
-  
-  return stats;
-}
+(function initDashboard(App) {
+  const ui = App.ui;
+  const RECENT_PAGE_SIZE = 7;
+  let recentActivityPage = 1;
 
-function renderStatsGrid(stats) {
-  const grid = document.getElementById('statsGrid');
-  if (!grid) return;
-  
-  grid.innerHTML = `
-    <div class="stat-card">
-      <div class="stat-value">${stats.totalCompleted}</div>
-      <div class="stat-label">Total Completed</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-value">${stats.totalHoliday}</div>
-      <div class="stat-label">Holiday Days</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-value">${stats.currentStreak}</div>
-      <div class="stat-label">Current Streak 🔥</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-value">${stats.bestStreak}</div>
-      <div class="stat-label">Best Streak 🏆</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-value">${stats.completionRate}%</div>
-      <div class="stat-label">Completion Rate</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-value">${userSurahs.length}</div>
-      <div class="stat-label">Active Surahs</div>
-    </div>
-  `;
-}
+  function calculateStats() {
+    const completed = App.state.dailyProgress.filter((item) => item.status === 'Selesai').length;
+    const holiday = App.state.dailyProgress.filter((item) => item.status === 'Libur').length;
+    const total = App.state.dailyProgress.length;
 
-async function renderTodaySurahs() {
-  const container = document.getElementById('todaySurahsList');
-  if (!container) return;
-  
-  const today = new Date().toISOString().split('T')[0];
-  
-  // Get today's progress status for each surah
-  const todayProgress = {};
-  for (const progress of dailyProgress) {
-    if (progress.progress_date === today) {
-      todayProgress[progress.surah_id] = progress.status;
-    }
-  }
-  
-  if (userSurahs.length === 0) {
-    container.innerHTML = `
-      <div class="card" style="text-align: center; padding: 2rem;">
-        <p>You haven't added any surahs yet.</p>
-        <button class="btn btn-primary" onclick="navigateTo('surahs')">Add Your First Surah</button>
-      </div>
-    `;
-    return;
-  }
-  
-  let html = '';
-  for (const userSurah of userSurahs) {
-    const surah = allSurahs.find(s => s.id === userSurah.surah_id);
-    if (!surah) continue;
-    
-    const status = todayProgress[userSurah.surah_id];
-    const isCompleted = status === 'Selesai';
-    const isHoliday = status === 'Libur';
-    
-    html += `
-      <div class="today-surah-item">
-        <div class="today-surah-info">
-          <h4>📖 ${surah.name}</h4>
-          <p>Target: ${userSurah.target_days} days</p>
-        </div>
-        <div class="today-surah-actions">
-          ${!status ? `
-            <button class="btn btn-success" onclick="updateProgress('${userSurah.surah_id}', 'Selesai')">✅ Selesai</button>
-            <button class="btn btn-outline" onclick="updateProgress('${userSurah.surah_id}', 'Libur')">🌙 Libur</button>
-          ` : `
-            <span class="status-badge ${isCompleted ? 'status-completed' : 'status-holiday'}">
-              ${isCompleted ? '✅ Completed Today' : '🌙 Holiday Today'}
-            </span>
-          `}
-        </div>
-      </div>
-    `;
-  }
-  
-  container.innerHTML = html;
-}
-
-function renderRecentActivity() {
-  const container = document.getElementById('recentActivity');
-  if (!container) return;
-  
-  if (dailyProgress.length === 0) {
-    container.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--text-muted);">No activity yet. Start your memorization today!</div>';
-    return;
-  }
-  
-  let html = '';
-  for (const progress of dailyProgress.slice(0, 10)) {
-    const surah = allSurahs.find(s => s.id === progress.surah_id);
-    const statusText = progress.status === 'Selesai' ? '✅ Completed' : '🌙 Holiday';
-    const statusClass = progress.status === 'Selesai' ? 'status-completed' : 'status-holiday';
-    
-    html += `
-      <div class="activity-item">
-        <div>
-          <span class="activity-date">${formatDate(progress.progress_date)}</span>
-          <span style="margin-left: 0.5rem; font-size: 0.875rem;">${surah?.name || 'Unknown'}</span>
-        </div>
-        <span class="status-badge ${statusClass}">${statusText}</span>
-      </div>
-    `;
-  }
-  
-  container.innerHTML = html;
-}
-
-// ==================== PROGRESS UPDATE ====================
-async function updateProgress(surahId, status) {
-  showLoading(true);
-  
-  const today = new Date().toISOString().split('T')[0];
-  
-  // Check if progress already exists
-  const existing = dailyProgress.find(p => 
-    p.surah_id === surahId && p.progress_date === today
-  );
-  
-  let result;
-  if (existing) {
-    result = await supabase
-      .from('daily_progress')
-      .update({ status: status, updated_at: new Date() })
-      .eq('id', existing.id);
-  } else {
-    result = await supabase
-      .from('daily_progress')
-      .insert({
-        user_id: currentUser.id,
-        surah_id: surahId,
-        progress_date: today,
-        status: status
-      });
-  }
-  
-  if (result.error) {
-    showToast(result.error.message, 'error');
-  } else {
-    showToast(`Progress updated: ${status}`, 'success');
-    await loadDashboard(); // Refresh dashboard
-  }
-  
-  showLoading(false);
-}
-
-// ==================== SURAH MANAGEMENT ====================
-async function loadSurahsPage() {
-  if (!currentUser) return;
-  
-  showLoading(true);
-  await loadUserData();
-  renderSurahsList();
-  populateSurahSelect();
-  showLoading(false);
-}
-
-function renderSurahsList() {
-  const container = document.getElementById('surahsList');
-  if (!container) return;
-  
-  if (userSurahs.length === 0) {
-    container.innerHTML = `
-      <div class="card" style="text-align: center; padding: 3rem;">
-        <p style="margin-bottom: 1rem; color: var(--text-muted);">You haven't added any surahs yet.</p>
-        <button class="btn btn-primary" onclick="document.getElementById('addSurahBtn').click()">Add Your First Surah</button>
-      </div>
-    `;
-    return;
-  }
-  
-  let html = '';
-  for (const userSurah of userSurahs) {
-    const surah = allSurahs.find(s => s.id === userSurah.surah_id);
-    if (!surah) continue;
-    
-    // Calculate progress for this surah
-    const surahProgress = dailyProgress.filter(p => p.surah_id === userSurah.surah_id);
-    const completed = surahProgress.filter(p => p.status === 'Selesai').length;
-    const progressPercent = Math.min(100, Math.round((completed / userSurah.target_days) * 100));
-    
-    html += `
-      <div class="surah-card">
-        <div class="surah-header">
-          <span class="surah-name">📖 ${surah.name}</span>
-          <button class="btn btn-outline" style="padding: 0.25rem 0.5rem;" onclick="deleteSurah('${userSurah.id}')">🗑️</button>
-        </div>
-        <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 1rem;">${surah.description || ''}</p>
-        <div class="surah-progress">
-          <div class="progress-bar">
-            <div class="progress-fill" style="width: ${progressPercent}%"></div>
-          </div>
-        </div>
-        <div class="surah-stats">
-          <span>🎯 Target: ${userSurah.target_days} days</span>
-          <span>✅ Completed: ${completed}/${userSurah.target_days}</span>
-        </div>
-        <div class="surah-stats">
-          <span>🔥 Streak: ${userSurah.current_streak} days</span>
-          <span>🏆 Best: ${userSurah.best_streak} days</span>
-        </div>
-      </div>
-    `;
-  }
-  
-  container.innerHTML = html;
-}
-
-function populateSurahSelect() {
-  const select = document.getElementById('newSurahId');
-  if (!select) return;
-  
-  // Get surahs not already added by user
-  const userSurahIds = userSurahs.map(us => us.surah_id);
-  const availableSurahs = allSurahs.filter(s => !userSurahIds.includes(s.id));
-  
-  if (availableSurahs.length === 0) {
-    select.innerHTML = '<option disabled>All surahs already added</option>';
-    document.getElementById('confirmAddSurahBtn').disabled = true;
-    return;
-  }
-  
-  select.innerHTML = availableSurahs.map(s => 
-    `<option value="${s.id}">${s.name}</option>`
-  ).join('');
-  
-  document.getElementById('confirmAddSurahBtn').disabled = false;
-}
-
-async function addSurah(surahId, targetDays) {
-  showLoading(true);
-  
-  const { data, error } = await supabase
-    .from('user_surahs')
-    .insert({
-      user_id: currentUser.id,
-      surah_id: surahId,
-      target_days: targetDays
-    })
-    .select();
-  
-  if (error) {
-    showToast(error.message, 'error');
-    showLoading(false);
-    return false;
-  }
-  
-  showToast('Surah added successfully!', 'success');
-  await loadUserData();
-  renderSurahsList();
-  showLoading(false);
-  return true;
-}
-
-async function deleteSurah(userSurahId) {
-  if (!confirm('Are you sure you want to remove this surah? All progress will be lost.')) return;
-  
-  showLoading(true);
-  
-  const { error } = await supabase
-    .from('user_surahs')
-    .delete()
-    .eq('id', userSurahId);
-  
-  if (error) {
-    showToast(error.message, 'error');
-  } else {
-    showToast('Surah removed', 'success');
-    await loadUserData();
-    renderSurahsList();
-    if (document.getElementById('dashboardPage').style.display !== 'none') {
-      await loadDashboard();
-    }
-  }
-  
-  showLoading(false);
-}
-
-// ==================== STATISTICS PAGE ====================
-async function loadStatsPage() {
-  if (!currentUser) return;
-  
-  showLoading(true);
-  await loadUserData();
-  renderDetailedStats();
-  showLoading(false);
-}
-
-function renderDetailedStats() {
-  const container = document.getElementById('statsDetailed');
-  if (!container) return;
-  
-  // Group by surah
-  const surahStats = {};
-  for (const surah of allSurahs) {
-    surahStats[surah.id] = {
-      name: surah.name,
-      description: surah.description,
-      completed: 0,
-      holiday: 0,
-      total: 0,
-      dates: []
+    return {
+      completed,
+      holiday,
+      completionRate: total ? Math.round((completed / total) * 100) : 0,
+      activeSurahs: App.state.userSurahs.length
     };
   }
-  
-  for (const progress of dailyProgress) {
-    if (surahStats[progress.surah_id]) {
-      surahStats[progress.surah_id].total++;
-      if (progress.status === 'Selesai') {
-        surahStats[progress.surah_id].completed++;
-      } else if (progress.status === 'Libur') {
-        surahStats[progress.surah_id].holiday++;
+
+  function renderStatsGrid() {
+    const stats = calculateStats();
+    const grid = ui.get('statsGrid');
+
+    ui.clear(grid);
+    [
+      ['Selesai', stats.completed],
+      ['Libur', stats.holiday],
+      ['Completion Rate', `${stats.completionRate}%`],
+      ['Surah Aktif', stats.activeSurahs]
+    ].forEach(([label, value]) => {
+      grid.appendChild(ui.create('div', { className: 'stat-card' }, [
+        ui.create('div', { className: 'stat-value', text: value }),
+        ui.create('div', { className: 'stat-label', text: label })
+      ]));
+    });
+  }
+
+  function renderServerTime() {
+    const serverDay = App.state.serverDay;
+    const timeZone = serverDay?.timeZone || 'Asia/Jakarta';
+
+    ui.get('serverNowText').textContent = serverDay
+      ? `${ui.formatDateTime(serverDay.serverNow, timeZone)} ${timeZone}`
+      : 'Tidak tersedia';
+
+    ui.get('serverDateText').textContent = serverDay?.appDate
+      ? ui.formatDate(serverDay.appDate)
+      : '-';
+
+    ui.get('nextDayText').textContent = serverDay?.nextDayAt
+      ? ui.formatDateTime(serverDay.nextDayAt, timeZone)
+      : '-';
+  }
+
+  function renderTodaySurahs() {
+    const container = ui.get('todaySurahsList');
+    const todayProgress = new Map();
+
+    ui.clear(container);
+    for (const progress of App.state.dailyProgress) {
+      if (progress.progress_date === App.getToday()) {
+        todayProgress.set(progress.surah_id, progress);
       }
-      surahStats[progress.surah_id].dates.push(progress.progress_date);
+    }
+
+    if (App.state.userSurahs.length === 0) {
+      container.appendChild(ui.emptyState('Belum ada surah. Buka My Surahs untuk menambahkan target hafalan.'));
+      return;
+    }
+
+    for (const userSurah of App.state.userSurahs) {
+      const surah = App.state.allSurahs.find((item) => item.id === userSurah.surah_id);
+      if (!surah) continue;
+
+      const progress = todayProgress.get(userSurah.surah_id);
+      const info = ui.create('div', {}, [
+        ui.create('strong', { text: surah.name }),
+        ui.create('div', {}, [
+          ui.create('small', { className: 'muted', text: `Target: ${userSurah.target_days} hari` })
+        ])
+      ]);
+
+      const actions = ui.create('div', { className: 'today-surah-actions' });
+      if (progress) {
+        const statusClass = progress.status === 'Selesai' ? 'status-completed' : 'status-holiday';
+        actions.append(
+          ui.create('span', { className: `status-badge ${statusClass}`, text: progress.status }),
+          ui.button('Batalkan', 'btn btn-outline', {
+            action: 'undo-progress',
+            surahId: userSurah.surah_id,
+            progressId: progress.id
+          })
+        );
+      } else {
+        actions.append(
+          ui.button('Selesai', 'btn btn-success', { action: 'update-progress', surahId: userSurah.surah_id, status: 'Selesai' }),
+          ui.button('Libur', 'btn btn-warning', { action: 'update-progress', surahId: userSurah.surah_id, status: 'Libur' })
+        );
+      }
+
+      container.appendChild(ui.create('div', { className: 'today-surah-item' }, [info, actions]));
     }
   }
-  
-  let html = '<div class="stats-detailed-grid" style="display: grid; gap: 1.5rem;">';
-  
-  for (const [id, stats] of Object.entries(surahStats)) {
-    const userSurah = userSurahs.find(us => us.surah_id === id);
-    const completedPercent = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
-    
-    html += `
-      <div class="card">
-        <h3 style="margin-bottom: 0.5rem;">📖 ${stats.name}</h3>
-        <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 1rem;">${stats.description || ''}</p>
-        
-        <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 1rem;">
-          <div class="stat-card">
-            <div class="stat-value">${stats.completed}</div>
-            <div class="stat-label">Completed</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value">${stats.holiday}</div>
-            <div class="stat-label">Holiday</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value">${completedPercent}%</div>
-            <div class="stat-label">Completion</div>
-          </div>
-        </div>
-        
-        ${userSurah ? `
-          <div class="surah-stats">
-            <span>🎯 Target: ${userSurah.target_days} days</span>
-            <span>🔥 Current Streak: ${userSurah.current_streak}</span>
-          </div>
-        ` : ''}
-      </div>
-    `;
+
+  function renderRecentActivity() {
+    const container = ui.get('recentActivity');
+    const recent = [...App.state.dailyProgress]
+      .sort((a, b) => new Date(b.progress_date) - new Date(a.progress_date));
+    const totalPages = Math.max(1, Math.ceil(recent.length / RECENT_PAGE_SIZE));
+    recentActivityPage = Math.min(recentActivityPage, totalPages);
+    const pageStart = (recentActivityPage - 1) * RECENT_PAGE_SIZE;
+    const pageItems = recent.slice(pageStart, pageStart + RECENT_PAGE_SIZE);
+
+    ui.clear(container);
+    if (recent.length === 0) {
+      container.appendChild(ui.emptyState('Belum ada aktivitas.'));
+      return;
+    }
+
+    for (const progress of pageItems) {
+      const surah = App.state.allSurahs.find((item) => item.id === progress.surah_id);
+      container.appendChild(ui.create('div', { className: 'activity-item' }, [
+        ui.create('span', { text: ui.formatDate(progress.progress_date) }),
+        ui.create('span', {}, [
+          ui.create('strong', { text: surah?.name || 'Surah' }),
+          ` - ${progress.status}`
+        ])
+      ]));
+    }
+
+    const pagination = ui.paginationControls({
+      page: recentActivityPage,
+      totalItems: recent.length,
+      pageSize: RECENT_PAGE_SIZE,
+      action: 'dashboard-recent-page'
+    });
+    if (pagination) container.appendChild(pagination);
   }
-  
-  html += '</div>';
-  container.innerHTML = html;
-}
+
+  async function loadDashboard() {
+    if (!App.state.currentUser) return;
+
+    ui.showLoading(true);
+    try {
+      await App.data.loadServerDayInfo();
+      await App.data.loadUserData();
+      renderServerTime();
+      renderTodaySurahs();
+      renderStatsGrid();
+      renderRecentActivity();
+    } catch (error) {
+      ui.showToast(error.message, 'error');
+    } finally {
+      ui.showLoading(false);
+    }
+  }
+
+  async function updateProgress(surahId, status) {
+    const surah = App.state.allSurahs.find((item) => item.id === surahId);
+    const confirmed = await App.modals.showConfirmModal({
+      icon: status === 'Selesai' ? 'OK' : 'i',
+      title: status === 'Selesai' ? 'Konfirmasi Selesai' : 'Konfirmasi Libur',
+      message: [
+        ui.create('p', {}, [
+          'Tandai ',
+          ui.create('strong', { text: surah?.name || 'surah ini' }),
+          ` sebagai ${status} untuk hari ini?`
+        ])
+      ],
+      type: status === 'Selesai' ? 'success' : 'warning',
+      confirmText: 'Ya, Simpan'
+    });
+
+    if (!confirmed) return;
+
+    ui.showLoading(true);
+    try {
+      await App.data.upsertProgress(surahId, status);
+      await loadDashboard();
+      ui.showToast(`Progress disimpan: ${status}`, 'success');
+    } catch (error) {
+      ui.showToast(error.message, 'error');
+    } finally {
+      ui.showLoading(false);
+    }
+  }
+
+  async function undoProgress(surahId, progressId) {
+    const surah = App.state.allSurahs.find((item) => item.id === surahId);
+    const confirmed = await App.modals.showConfirmModal({
+      icon: '!',
+      title: 'Batalkan Progress',
+      message: [
+        ui.create('p', {}, [
+          'Hapus catatan progress hari ini untuk ',
+          ui.create('strong', { text: surah?.name || 'surah ini' }),
+          '?'
+        ])
+      ],
+      type: 'danger',
+      confirmText: 'Ya, Batalkan'
+    });
+
+    if (!confirmed) return;
+
+    ui.showLoading(true);
+    try {
+      await App.data.deleteProgress(progressId);
+      await loadDashboard();
+      ui.showToast('Progress dibatalkan.', 'success');
+    } catch (error) {
+      ui.showToast(error.message, 'error');
+    } finally {
+      ui.showLoading(false);
+    }
+  }
+
+  function setupDashboardEvents() {
+    ui.get('todaySurahsList').addEventListener('click', (event) => {
+      const button = event.target.closest('button[data-action]');
+      if (!button) return;
+
+      if (button.dataset.action === 'update-progress') {
+        updateProgress(button.dataset.surahId, button.dataset.status);
+      }
+
+      if (button.dataset.action === 'undo-progress') {
+        undoProgress(button.dataset.surahId, button.dataset.progressId);
+      }
+    });
+
+    ui.get('recentActivity').addEventListener('click', (event) => {
+      const button = event.target.closest('button[data-action="dashboard-recent-page"]');
+      if (!button) return;
+
+      recentActivityPage += button.dataset.direction === 'next' ? 1 : -1;
+      renderRecentActivity();
+    });
+  }
+
+  App.dashboard = {
+    loadDashboard,
+    setupDashboardEvents
+  };
+})(window.App);

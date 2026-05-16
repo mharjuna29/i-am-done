@@ -1,161 +1,98 @@
-// ==================== AUTHENTICATION FUNCTIONS ====================
-async function checkSession() {
-  const { data: { session }, error } = await supabase.auth.getSession();
-  
-  if (error) {
-    console.error('Session check error:', error);
-    return false;
-  }
-  
-  if (session) {
-    currentSession = session;
-    currentUser = session.user;
-    await loadUserData();
-    return true;
-  }
-  
-  return false;
-}
+window.App = window.App || {};
 
-async function login(email, password) {
-  showLoading(true);
-  
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email: email,
-    password: password
-  });
-  
-  showLoading(false);
-  
-  if (error) {
-    showToast(error.message, 'error');
-    return false;
-  }
-  
-  currentSession = data.session;
-  currentUser = data.user;
-  await loadUserData();
-  showToast(`Welcome back, ${currentUser.user_metadata?.full_name || currentUser.email}!`, 'success');
-  return true;
-}
+(function initAuth(App) {
+  const ui = App.ui;
 
-async function register(fullName, email, password) {
-  showLoading(true);
-  
-  const { data, error } = await supabase.auth.signUp({
-    email: email,
-    password: password,
-    options: {
-      data: {
-        full_name: fullName
+  async function checkSession() {
+    try {
+      const { data, error } = await App.supabase.auth.getSession();
+      if (error) throw error;
+
+      if (!data.session) {
+        App.state.currentUser = null;
+        return false;
       }
+
+      App.state.currentUser = data.session.user;
+      await App.data.saveUserProfile(data.session.user);
+      await App.data.loadUserData();
+      return true;
+    } catch (error) {
+      console.error('Session error:', error);
+      ui.showToast('Gagal memeriksa sesi login.', 'error');
+      return false;
     }
-  });
-  
-  showLoading(false);
-  
-  if (error) {
-    showToast(error.message, 'error');
-    return false;
   }
-  
-  if (data.user) {
-    showToast('Registration successful! Please check your email for confirmation.', 'success');
-    // Auto login after registration
-    return await login(email, password);
-  }
-  
-  return false;
-}
 
-async function logout() {
-  showLoading(true);
-  
-  const { error } = await supabase.auth.signOut();
-  
-  showLoading(false);
-  
-  if (error) {
-    showToast(error.message, 'error');
-    return false;
-  }
-  
-  currentUser = null;
-  currentSession = null;
-  userSurahs = [];
-  allSurahs = [];
-  dailyProgress = [];
-  
-  showToast('Logged out successfully', 'success');
-  return true;
-}
+  async function login(email, password) {
+    ui.showLoading(true);
+    try {
+      const { data, error } = await App.supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
 
-// ==================== LOAD USER DATA ====================
-async function loadUserData() {
-  if (!currentUser) return;
-  
-  showLoading(true);
-  
-  // Load all available surahs
-  const { data: surahsData, error: surahsError } = await supabase
-    .from('surahs')
-    .select('*')
-    .order('name');
-  
-  if (surahsError) {
-    console.error('Error loading surahs:', surahsError);
-  } else {
-    allSurahs = surahsData;
+      App.state.currentUser = data.user;
+      await App.data.saveUserProfile(data.user);
+      await App.data.loadUserData();
+      ui.showToast('Login berhasil!', 'success');
+      return true;
+    } catch (error) {
+      ui.showToast(error.message, 'error');
+      return false;
+    } finally {
+      ui.showLoading(false);
+    }
   }
-  
-  // Load user's selected surahs with progress
-  const { data: userSurahsData, error: userSurahsError } = await supabase
-    .from('user_surahs')
-    .select('*')
-    .eq('user_id', currentUser.id);
-  
-  if (userSurahsError) {
-    console.error('Error loading user surahs:', userSurahsError);
-  } else {
-    userSurahs = userSurahsData;
-  }
-  
-  // Load daily progress for last 30 days
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  
-  const { data: progressData, error: progressError } = await supabase
-    .from('daily_progress')
-    .select('*, surahs(name)')
-    .eq('user_id', currentUser.id)
-    .gte('progress_date', thirtyDaysAgo.toISOString().split('T')[0])
-    .order('progress_date', { ascending: false });
-  
-  if (progressError) {
-    console.error('Error loading progress:', progressError);
-  } else {
-    dailyProgress = progressData;
-  }
-  
-  showLoading(false);
-}
 
-// ==================== UPDATE PROFILE ====================
-async function updateUserProfile(updates) {
-  const { data, error } = await supabase.auth.updateUser({
-    data: updates
-  });
-  
-  if (error) {
-    showToast(error.message, 'error');
-    return false;
+  async function register(fullName, email, password) {
+    ui.showLoading(true);
+    try {
+      const { data, error } = await App.supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName
+          }
+        }
+      });
+
+      if (error) throw error;
+      await App.data.saveUserProfile(data.user, fullName);
+      ui.showToast('Registrasi berhasil. Silakan login.', 'success');
+      return true;
+    } catch (error) {
+      ui.showToast(error.message, 'error');
+      return false;
+    } finally {
+      ui.showLoading(false);
+    }
   }
-  
-  if (data.user) {
-    currentUser = data.user;
-    showToast('Profile updated successfully', 'success');
-    return true;
+
+  async function logout() {
+    ui.showLoading(true);
+    try {
+      const { error } = await App.supabase.auth.signOut();
+      if (error) throw error;
+
+      App.state.currentUser = null;
+      App.state.userSurahs = [];
+      App.state.allSurahs = [];
+      App.state.dailyProgress = [];
+      App.state.serverDay = null;
+      ui.showToast('Logout berhasil.', 'success');
+      return true;
+    } catch (error) {
+      ui.showToast(error.message, 'error');
+      return false;
+    } finally {
+      ui.showLoading(false);
+    }
   }
-  
-  return false;
-}
+
+  App.auth = {
+    checkSession,
+    login,
+    register,
+    logout
+  };
+})(window.App);

@@ -1,183 +1,187 @@
-// ==================== APP INITIALIZATION ====================
-document.addEventListener('DOMContentLoaded', async () => {
-  // Initialize theme
-  initTheme();
-  
-  // Check authentication
-  const isAuthenticated = await checkSession();
-  
-  if (isAuthenticated) {
-    showApp();
-    await loadDashboard();
-  } else {
-    showAuth();
-  }
-  
-  // Setup event listeners
-  setupEventListeners();
-});
+window.App = window.App || {};
 
-function initTheme() {
-  const savedTheme = localStorage.getItem('theme') || 'dark';
-  document.documentElement.setAttribute('data-theme', savedTheme);
-  
-  const toggleBtn = document.getElementById('themeToggle');
-  if (toggleBtn) {
-    toggleBtn.addEventListener('click', () => {
-      const currentTheme = document.documentElement.getAttribute('data-theme');
-      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-theme', newTheme);
-      localStorage.setItem('theme', newTheme);
+(function initApp(App) {
+  const ui = App.ui;
+  const APP_VERSION = '1.0.0';
+
+  App.version = APP_VERSION;
+
+  function applyTheme(theme) {
+    const nextTheme = theme === 'light' ? 'light' : 'dark';
+    const toggle = ui.get('themeToggle');
+    const toggleText = ui.get('themeToggleText');
+    const themeColor = document.querySelector('meta[name="theme-color"]');
+
+    document.documentElement.dataset.theme = nextTheme;
+    localStorage.setItem('theme', nextTheme);
+
+    if (toggle) {
+      toggle.setAttribute('aria-pressed', String(nextTheme === 'light'));
+      toggle.setAttribute('aria-label', nextTheme === 'light' ? 'Switch to dark mode' : 'Switch to light mode');
+    }
+
+    if (toggleText) {
+      toggleText.textContent = nextTheme === 'light' ? 'Light' : 'Dark';
+    }
+
+    if (themeColor) {
+      themeColor.setAttribute('content', nextTheme === 'light' ? '#f5f7fb' : '#0a0a0a');
+    }
+  }
+
+  function initTheme() {
+    const savedTheme = localStorage.getItem('theme');
+    const prefersLight = window.matchMedia?.('(prefers-color-scheme: light)').matches;
+    applyTheme(savedTheme || (prefersLight ? 'light' : 'dark'));
+  }
+
+  function showApp() {
+    ui.setHidden('authPages', true);
+    ui.setHidden('navMenu', false);
+    ui.setHidden('loginBtn', true);
+    ui.setHidden('userInfo', false);
+
+    const name = App.state.currentUser?.user_metadata?.full_name || App.state.currentUser?.email?.split('@')[0] || 'User';
+    ui.get('userName').textContent = name;
+  }
+
+  function showAuth() {
+    ui.setHidden('authPages', false);
+    ui.setHidden('loginPage', false);
+    ui.setHidden('registerPage', true);
+    ui.setHidden('navMenu', true);
+    ui.setHidden('loginBtn', true);
+    ui.setHidden('userInfo', true);
+
+    for (const page of ['dashboardPage', 'surahsPage', 'communityPage', 'statsPage']) {
+      ui.setHidden(page, true);
+    }
+  }
+
+  function showRegisterPage() {
+    ui.setHidden('loginPage', true);
+    ui.setHidden('registerPage', false);
+  }
+
+  function showLoginPage() {
+    ui.setHidden('loginPage', false);
+    ui.setHidden('registerPage', true);
+  }
+
+  async function navigateTo(page) {
+    const allowedPages = ['dashboard', 'surahs', 'community', 'stats'];
+    const nextPage = allowedPages.includes(page) ? page : 'dashboard';
+
+    localStorage.setItem('activePage', nextPage);
+    ui.setPageVisible(nextPage);
+
+    if (nextPage === 'dashboard') await App.dashboard.loadDashboard();
+    if (nextPage === 'surahs') await App.surahs.loadSurahsPage();
+    if (nextPage === 'community') await App.community.loadCommunityPage();
+    if (nextPage === 'stats') await App.stats.loadStatsPage();
+  }
+
+  function registerServiceWorker() {
+    if (!('serviceWorker' in navigator)) return;
+
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch((error) => {
+        console.warn('Service worker registration failed:', error);
+      });
     });
   }
-}
 
-function showApp() {
-  document.getElementById('authPages').style.display = 'none';
-  document.getElementById('userMenu').style.display = 'block';
-  document.getElementById('loginBtn').style.display = 'none';
-  
-  // Update user info in dropdown
-  if (currentUser) {
-    const name = currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || 'User';
-    document.getElementById('userNameDisplay').textContent = name;
-    document.getElementById('userEmailDisplay').textContent = currentUser.email;
-    document.getElementById('userInitials').textContent = name.charAt(0).toUpperCase();
+  function renderFooterMeta() {
+    const year = new Date().getFullYear();
+    const yearElement = ui.get('copyrightYear');
+    const versionElement = ui.get('appVersion');
+
+    if (yearElement) yearElement.textContent = year;
+    if (versionElement) versionElement.textContent = APP_VERSION;
   }
-  
-  // Show default page
-  navigateTo('dashboard');
-}
 
-function showAuth() {
-  document.getElementById('authPages').style.display = 'block';
-  document.getElementById('userMenu').style.display = 'none';
-  document.getElementById('loginBtn').style.display = 'block';
-  document.getElementById('dashboardPage').style.display = 'none';
-  document.getElementById('surahsPage').style.display = 'none';
-  document.getElementById('statsPage').style.display = 'none';
-  
-  showLoginPage();
-}
+  function setupEvents() {
+    document.querySelectorAll('.nav-item').forEach((button) => {
+      button.addEventListener('click', () => navigateTo(button.dataset.page));
+    });
 
-function showLoginPage() {
-  document.getElementById('loginPage').style.display = 'flex';
-  document.getElementById('registerPage').style.display = 'none';
-}
+    ui.get('logoHomeBtn').addEventListener('click', () => {
+      if (App.state.currentUser) {
+        navigateTo('dashboard');
+      }
+    });
 
-function showRegisterPage() {
-  document.getElementById('loginPage').style.display = 'none';
-  document.getElementById('registerPage').style.display = 'flex';
-}
+    ui.get('loginForm').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const success = await App.auth.login(ui.get('loginEmail').value, ui.get('loginPassword').value);
+      if (success) {
+        showApp();
+        await navigateTo('dashboard');
+      }
+    });
 
-function navigateTo(page) {
-  // Hide all pages
-  document.getElementById('dashboardPage').style.display = 'none';
-  document.getElementById('surahsPage').style.display = 'none';
-  document.getElementById('statsPage').style.display = 'none';
-  
-  // Show selected page
-  document.getElementById(`${page}Page`).style.display = 'block';
-  
-  // Update active nav state
-  document.querySelectorAll('.nav-item').forEach(item => {
-    item.classList.remove('active');
-    if (item.dataset.page === page) {
-      item.classList.add('active');
-    }
-  });
-  
-  // Load page data
-  if (page === 'dashboard') {
-    loadDashboard();
-  } else if (page === 'surahs') {
-    loadSurahsPage();
-  } else if (page === 'stats') {
-    loadStatsPage();
+    ui.get('registerForm').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const success = await App.auth.register(
+        ui.get('regName').value,
+        ui.get('regEmail').value,
+        ui.get('regPassword').value
+      );
+
+      if (success) showLoginPage();
+    });
+
+    ui.get('showRegister').addEventListener('click', (event) => {
+      event.preventDefault();
+      showRegisterPage();
+    });
+
+    ui.get('showLogin').addEventListener('click', (event) => {
+      event.preventDefault();
+      showLoginPage();
+    });
+
+    ui.get('loginBtn').addEventListener('click', showAuth);
+    ui.get('logoutBtn').addEventListener('click', async () => {
+      const success = await App.auth.logout();
+      if (success) {
+        localStorage.removeItem('activePage');
+        showAuth();
+      }
+    });
+
+    ui.get('themeToggle').addEventListener('click', () => {
+      const currentTheme = document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
+      applyTheme(currentTheme === 'light' ? 'dark' : 'light');
+    });
+
+    App.modals.setupModalEvents();
+    App.dashboard.setupDashboardEvents();
+    App.surahs.setupSurahEvents();
+    App.community.setupCommunityEvents();
   }
-}
 
-function setupEventListeners() {
-  // Navigation
-  document.querySelectorAll('.nav-item').forEach(btn => {
-    btn.addEventListener('click', () => navigateTo(btn.dataset.page));
-  });
-  
-  // Auth forms
-  document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const email = document.getElementById('loginEmail').value;
-    const password = document.getElementById('loginPassword').value;
-    const success = await login(email, password);
-    if (success) {
+  document.addEventListener('DOMContentLoaded', async () => {
+    initTheme();
+    setupEvents();
+    renderFooterMeta();
+    registerServiceWorker();
+
+    const authenticated = await App.auth.checkSession();
+
+    if (authenticated) {
       showApp();
-      await loadDashboard();
-    }
-  });
-  
-  document.getElementById('registerForm')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const name = document.getElementById('regName').value;
-    const email = document.getElementById('regEmail').value;
-    const password = document.getElementById('regPassword').value;
-    const success = await register(name, email, password);
-    if (success) {
-      showApp();
-      await loadDashboard();
-    }
-  });
-  
-  document.getElementById('showRegister')?.addEventListener('click', (e) => {
-    e.preventDefault();
-    showRegisterPage();
-  });
-  
-  document.getElementById('showLogin')?.addEventListener('click', (e) => {
-    e.preventDefault();
-    showLoginPage();
-  });
-  
-  document.getElementById('loginBtn')?.addEventListener('click', () => {
-    showAuth();
-  });
-  
-  document.getElementById('logoutBtn')?.addEventListener('click', async () => {
-    await logout();
-    showAuth();
-  });
-  
-  // Add Surah Modal
-  document.getElementById('addSurahBtn')?.addEventListener('click', () => {
-    populateSurahSelect();
-    document.getElementById('addSurahModal').classList.add('active');
-  });
-  
-  document.getElementById('closeModalBtn')?.addEventListener('click', () => {
-    document.getElementById('addSurahModal').classList.remove('active');
-  });
-  
-  document.getElementById('confirmAddSurahBtn')?.addEventListener('click', async () => {
-    const surahId = document.getElementById('newSurahId').value;
-    const targetDays = parseInt(document.getElementById('newTargetDays').value);
-    
-    if (surahId && targetDays >= 30 && targetDays <= 365) {
-      await addSurah(surahId, targetDays);
-      document.getElementById('addSurahModal').classList.remove('active');
+      await navigateTo(localStorage.getItem('activePage') || 'dashboard');
     } else {
-      showToast('Please select a surah and valid target days (30-365)', 'error');
+      showAuth();
     }
-  });
-  
-  // Close modal on outside click
-  document.getElementById('addSurahModal')?.addEventListener('click', (e) => {
-    if (e.target === document.getElementById('addSurahModal')) {
-      document.getElementById('addSurahModal').classList.remove('active');
-    }
-  });
-}
 
-// Expose functions to global scope for HTML onclick
-window.navigateTo = navigateTo;
-window.updateProgress = updateProgress;
-window.deleteSurah = deleteSurah;
-window.addSurah = addSurah;
+    ui.showLoading(false);
+  });
+
+  App.app = {
+    navigateTo,
+    showApp,
+    showAuth
+  };
+})(window.App);

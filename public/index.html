@@ -1,225 +1,241 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#0a0a0a">
-  <meta name="description" content="Track your daily memorization of Ar-Rahman & Rathib Al-Haddad">
-  <link rel="manifest" href="/assets/manifest.json">
-  <link rel="icon" type="image/png" href="/assets/icon-192.png">
-  <title>I am Done - Hafalan Tracker</title>
-  <link rel="stylesheet" href="/css/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0a0a0a">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <link rel="manifest" href="assets/manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="assets/android-chrome.png">
+    <link rel="apple-touch-icon" href="assets/android-chrome2.png">
+    <link rel="stylesheet" href="css/style.css">
+    <title>I am Done - Hafalan Tracker</title>
 </head>
+
 <body>
-  <div class="app">
-    <!-- Navigation Bar -->
     <nav class="navbar">
-      <div class="nav-container">
-        <div class="logo">
-          <span class="logo-icon">✨</span>
-          <span class="logo-text">I am Done</span>
-        </div>
-        <div class="nav-menu" id="navMenu">
-          <button class="nav-item" data-page="dashboard">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-              <polyline points="9 22 9 12 15 12 15 22"/>
-            </svg>
-            <span>Dashboard</span>
-          </button>
-          <button class="nav-item" data-page="surahs">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
-              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
-            </svg>
-            <span>My Surahs</span>
-          </button>
-          <button class="nav-item" data-page="stats">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 12v3a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4v-3"/>
-              <path d="M12 2v8m0 0-3-3m3 3 3-3"/>
-              <path d="M19 2v8m0 0-3-3m3 3 3-3"/>
-            </svg>
-            <span>Statistics</span>
-          </button>
-        </div>
-        <div class="nav-actions">
-          <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
-            <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <circle cx="12" cy="12" r="5"/>
-              <line x1="12" y1="1" x2="12" y2="3"/>
-              <line x1="12" y1="21" x2="12" y2="23"/>
-              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
-              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-              <line x1="1" y1="12" x2="3" y2="12"/>
-              <line x1="21" y1="12" x2="23" y2="12"/>
-              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
-              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-            </svg>
-            <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-            </svg>
-          </button>
-          <div class="user-menu" id="userMenu" style="display: none;">
-            <button class="user-avatar" id="userAvatarBtn">
-              <span id="userInitials">U</span>
-            </button>
-            <div class="user-dropdown" id="userDropdown">
-              <div class="user-info-dropdown">
-                <strong id="userNameDisplay">User</strong>
-                <small id="userEmailDisplay">email@example.com</small>
-              </div>
-              <button class="dropdown-item" id="logoutBtn">Logout</button>
+        <div class="nav-container">
+            <button class="logo" type="button" id="logoHomeBtn" aria-label="Go to dashboard">I am Done</button>
+
+            <div class="nav-menu" id="navMenu" hidden>
+                <button class="nav-item" type="button" data-page="dashboard">Dashboard</button>
+                <button class="nav-item" type="button" data-page="surahs">My Surahs</button>
+                <button class="nav-item" type="button" data-page="community">Community</button>
+                <button class="nav-item" type="button" data-page="stats">Statistics</button>
             </div>
-          </div>
-          <button class="btn btn-primary" id="loginBtn" style="display: none;">Login</button>
+
+            <div class="nav-actions">
+                <button class="theme-toggle" type="button" id="themeToggle" aria-label="Switch to light mode" aria-pressed="false">
+                    <span class="theme-toggle-track" aria-hidden="true">
+                        <span class="theme-toggle-thumb"></span>
+                    </span>
+                    <span class="theme-toggle-text" id="themeToggleText">Dark</span>
+                </button>
+                <button class="btn btn-primary" type="button" id="loginBtn">Login</button>
+                <div class="user-info" id="userInfo" hidden>
+                    <span id="userName">User</span>
+                    <button class="btn btn-outline" type="button" id="logoutBtn">Logout</button>
+                </div>
+            </div>
         </div>
-      </div>
     </nav>
 
-    <!-- Main Content -->
     <main class="main-content">
-      <!-- Auth Pages (Login/Register) -->
-      <div id="authPages" style="display: none;">
-        <div class="auth-container" id="loginPage">
-          <div class="auth-card">
-            <div class="auth-header">
-              <h2>Welcome Back</h2>
-              <p>Login to track your memorization</p>
+        <section id="authPages" hidden>
+            <div class="auth-container" id="loginPage">
+                <div class="auth-card">
+                    <h1 class="auth-title">Welcome Back</h1>
+                    <p class="auth-subtitle">Track your daily memorization progress</p>
+
+                    <form id="loginForm">
+                        <div class="form-group">
+                            <label for="loginEmail">Email</label>
+                            <input type="email" id="loginEmail" placeholder="your@email.com" autocomplete="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="loginPassword">Password</label>
+                            <input type="password" id="loginPassword" placeholder="min 6 characters" autocomplete="current-password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">Login</button>
+                    </form>
+
+                    <p class="auth-switch">
+                        <a href="#" id="showRegister">Don't have an account? Register</a>
+                    </p>
+                </div>
             </div>
-            <form id="loginForm">
-              <div class="form-group">
-                <label>Email</label>
-                <input type="email" id="loginEmail" placeholder="your@email.com" required>
-              </div>
-              <div class="form-group">
-                <label>Password</label>
-                <input type="password" id="loginPassword" placeholder="••••••••" required>
-              </div>
-              <button type="submit" class="btn btn-primary btn-full">Login</button>
-            </form>
-            <p class="auth-link">Don't have an account? <a href="#" id="showRegister">Register</a></p>
-          </div>
-        </div>
 
-        <div class="auth-container" id="registerPage" style="display: none;">
-          <div class="auth-card">
-            <div class="auth-header">
-              <h2>Create Account</h2>
-              <p>Start your memorization journey</p>
+            <div class="auth-container" id="registerPage" hidden>
+                <div class="auth-card">
+                    <h1 class="auth-title">Create Account</h1>
+                    <p class="auth-subtitle">Start your memorization journey</p>
+
+                    <form id="registerForm">
+                        <div class="form-group">
+                            <label for="regName">Full Name</label>
+                            <input type="text" id="regName" placeholder="Your name" autocomplete="name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="regEmail">Email</label>
+                            <input type="email" id="regEmail" placeholder="your@email.com" autocomplete="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="regPassword">Password</label>
+                            <input type="password" id="regPassword" placeholder="min 6 characters" autocomplete="new-password" minlength="6" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">Register</button>
+                    </form>
+
+                    <p class="auth-switch">
+                        <a href="#" id="showLogin">Already have an account? Login</a>
+                    </p>
+                </div>
             </div>
-            <form id="registerForm">
-              <div class="form-group">
-                <label>Full Name</label>
-                <input type="text" id="regName" placeholder="Your name" required>
-              </div>
-              <div class="form-group">
-                <label>Email</label>
-                <input type="email" id="regEmail" placeholder="your@email.com" required>
-              </div>
-              <div class="form-group">
-                <label>Password</label>
-                <input type="password" id="regPassword" placeholder="min 6 characters" required>
-              </div>
-              <button type="submit" class="btn btn-primary btn-full">Register</button>
-            </form>
-            <p class="auth-link">Already have an account? <a href="#" id="showLogin">Login</a></p>
-          </div>
-        </div>
-      </div>
+        </section>
 
-      <!-- Dashboard Page -->
-      <div id="dashboardPage" style="display: none;">
-        <div class="page-header">
-          <h1>Dashboard</h1>
-          <p>Track your daily progress</p>
-        </div>
+        <section class="page" id="dashboardPage" hidden>
+            <h1>Dashboard</h1>
+            <p class="page-subtitle">Track your daily progress</p>
 
-        <!-- Today's Quick Actions -->
-        <div class="today-card">
-          <h3>📖 Today's Memorization</h3>
-          <div class="today-surahs" id="todaySurahsList">
-            <!-- Dynamically loaded -->
-          </div>
-        </div>
-
-        <!-- Statistics Overview -->
-        <div class="stats-grid" id="statsGrid">
-          <!-- Dynamically loaded -->
-        </div>
-
-        <!-- Recent Activity -->
-        <div class="card">
-          <h3>📅 Recent Activity</h3>
-          <div class="activity-list" id="recentActivity">
-            <!-- Dynamically loaded -->
-          </div>
-        </div>
-      </div>
-
-      <!-- My Surahs Page -->
-      <div id="surahsPage" style="display: none;">
-        <div class="page-header">
-          <h1>My Surahs</h1>
-          <p>Manage surahs you want to memorize</p>
-        </div>
-
-        <button class="btn btn-primary" id="addSurahBtn" style="margin-bottom: 1rem;">
-          + Add New Surah
-        </button>
-
-        <div class="surahs-grid" id="surahsList">
-          <!-- Dynamically loaded -->
-        </div>
-
-        <!-- Add Surah Modal -->
-        <div class="modal" id="addSurahModal">
-          <div class="modal-content">
-            <h3>Add Surah to Memorize</h3>
-            <div class="form-group">
-              <label>Select Surah</label>
-              <select id="newSurahId">
-                <!-- Options loaded from database -->
-              </select>
+            <div class="server-time-card" id="serverTimeCard">
+                <div>
+                    <span class="server-time-label">Waktu Server</span>
+                    <strong id="serverNowText">Memuat...</strong>
+                </div>
+                <div>
+                    <span class="server-time-label">Tanggal Progress</span>
+                    <strong id="serverDateText">-</strong>
+                </div>
+                <div>
+                    <span class="server-time-label">Pergantian Hari</span>
+                    <strong id="nextDayText">-</strong>
+                </div>
             </div>
-            <div class="form-group">
-              <label>Target Days</label>
-              <input type="number" id="newTargetDays" min="30" max="365" value="30">
-            </div>
-            <div class="modal-actions">
-              <button class="btn btn-outline" id="closeModalBtn">Cancel</button>
-              <button class="btn btn-primary" id="confirmAddSurahBtn">Add</button>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      <!-- Statistics Page -->
-      <div id="statsPage" style="display: none;">
-        <div class="page-header">
-          <h1>Statistics</h1>
-          <p>Your memorization journey</p>
-        </div>
+            <div class="card">
+                <h2>Today's Memorization</h2>
+                <div id="todaySurahsList"></div>
+            </div>
 
-        <div class="stats-detailed" id="statsDetailed">
-          <!-- Detailed statistics -->
-        </div>
-      </div>
+            <div class="stats-grid" id="statsGrid"></div>
+
+            <div class="card">
+                <h2>Recent Activity</h2>
+                <div id="recentActivity"></div>
+            </div>
+        </section>
+
+        <section class="page" id="surahsPage" hidden>
+            <div class="page-header">
+                <div>
+                    <h1>My Surahs</h1>
+                    <p class="page-subtitle">Manage surahs you want to memorize</p>
+                </div>
+                <button class="btn btn-primary" type="button" id="addSurahBtn">Add New Surah</button>
+            </div>
+            <div class="surahs-grid" id="surahsList"></div>
+        </section>
+
+        <section class="page" id="communityPage" hidden>
+            <h1>Community Progress</h1>
+            <p class="page-subtitle">Lihat progres hafalan pengguna lain</p>
+            <div id="communityList"></div>
+        </section>
+
+        <section class="page" id="statsPage" hidden>
+            <h1>Statistics</h1>
+            <p class="page-subtitle">Your memorization journey</p>
+            <div id="statsDetailed"></div>
+        </section>
     </main>
 
-    <!-- Loading Overlay -->
-    <div class="loading-overlay" id="loadingOverlay" style="display: none;">
-      <div class="spinner-large"></div>
+    <footer class="site-footer">
+        <div class="footer-container">
+            <span>&copy; <span id="copyrightYear">2026</span> I am Done | Made by ❤️ For My Wife.</span>
+            <span class="footer-version">Version <span id="appVersion">-</span></span>
+        </div>
+    </footer>
+
+    <div class="modal-overlay" id="confirmModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" hidden>
+        <div class="modal-container">
+            <div class="modal-header">
+                <h2><span id="modalIcon" aria-hidden="true">!</span> <span id="modalTitle">Konfirmasi</span></h2>
+            </div>
+            <div class="modal-body" id="modalMessage"></div>
+            <div class="modal-actions">
+                <button class="btn btn-outline" type="button" id="modalCancelBtn">Batal</button>
+                <button class="btn btn-primary" type="button" id="modalConfirmBtn">Ya, Lanjutkan</button>
+            </div>
+        </div>
     </div>
-  </div>
 
-  <!-- Toast Notification -->
-  <div class="toast-container" id="toastContainer"></div>
+    <div class="modal-overlay" id="addSurahModal" role="dialog" aria-modal="true" aria-labelledby="addSurahTitle" hidden>
+        <div class="modal-container">
+            <div class="modal-header">
+                <h2 id="addSurahTitle">Tambah Surah Baru</h2>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="newSurahSelect">Pilih Surah</label>
+                    <select id="newSurahSelect">
+                        <option value="">-- Pilih Surah --</option>
+                    </select>
+                    <div class="surah-preview" id="surahPreview" hidden>
+                        <strong id="previewName"></strong>
+                        <small id="previewDescription"></small>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="targetDaysSlider">Target Hari (30-365 hari)</label>
+                    <div class="range-container">
+                        <input type="range" id="targetDaysSlider" min="30" max="365" value="30" step="1" class="range-slider">
+                        <span class="range-value" id="targetDaysValue">30 hari</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-outline" type="button" id="closeAddSurahBtn">Batal</button>
+                <button class="btn btn-primary" type="button" id="confirmAddSurahBtn">Tambah Surah</button>
+            </div>
+        </div>
+    </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="/js/supabase.js"></script>
-  <script src="/js/auth.js"></script>
-  <script src="/js/dashboard.js"></script>
-  <script src="/js/app.js"></script>
+    <div class="modal-overlay" id="userDetailModal" role="dialog" aria-modal="true" aria-labelledby="detailUserName" hidden>
+        <div class="modal-container modal-container-sm">
+            <div class="modal-header">
+                <h2 id="detailUserName">User Details</h2>
+            </div>
+            <div class="modal-body" id="userDetailBody">
+                <div class="empty-state">
+                    <div class="spinner"></div>
+                    <p>Memuat data...</p>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-outline" type="button" id="closeUserDetailBtn">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="loading-overlay" id="loadingOverlay" aria-live="polite">
+        <div class="spinner" aria-label="Loading"></div>
+    </div>
+    <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/modals.js"></script>
+    <script src="js/data.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script src="js/surahs.js"></script>
+    <script src="js/community.js"></script>
+    <script src="js/stats.js"></script>
+    <script src="js/app.js"></script>
 </body>
+
 </html>
