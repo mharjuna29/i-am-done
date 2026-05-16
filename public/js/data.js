@@ -38,18 +38,42 @@ window.App = window.App || {};
     return state().serverDay;
   }
 
-  async function saveUserProfile(user, fullName) {
+  async function saveUserProfile(user, fullName, username) {
     if (!user) return;
 
     const displayName = fullName || user.user_metadata?.full_name || user.email?.split('@')[0] || 'Pengguna';
-    const { error } = await db().from('user_profiles').upsert({
+    const profile = {
       id: user.id,
-      full_name: displayName
-    });
+      full_name: displayName,
+      email: user.email
+    };
+
+    const normalizedUsername = normalizeUsername(username || user.user_metadata?.username);
+    if (normalizedUsername) {
+      profile.username = normalizedUsername;
+    }
+
+    const { error } = await db().from('user_profiles').upsert(profile);
 
     if (error) {
       console.warn('Profile sync skipped:', error.message);
     }
+  }
+
+  function normalizeUsername(value) {
+    return String(value || '').trim().toLowerCase();
+  }
+
+  async function resolveUsernameEmail(username) {
+    const normalizedUsername = normalizeUsername(username);
+    const { data, error } = await db().rpc('resolve_login_email', {
+      login_identifier: normalizedUsername
+    });
+
+    if (error) throw error;
+    if (!data) throw new Error('Username tidak ditemukan.');
+
+    return data;
   }
 
   async function upsertProgress(surahId, status) {
@@ -134,6 +158,7 @@ window.App = window.App || {};
     loadUserData,
     loadServerDayInfo,
     saveUserProfile,
+    resolveUsernameEmail,
     upsertProgress,
     deleteProgress,
     addUserSurah,

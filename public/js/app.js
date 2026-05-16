@@ -113,7 +113,7 @@ window.App = window.App || {};
 
     ui.get('loginForm').addEventListener('submit', async (event) => {
       event.preventDefault();
-      const success = await App.auth.login(ui.get('loginEmail').value, ui.get('loginPassword').value);
+      const success = await App.auth.login(ui.get('loginUsername').value, ui.get('loginPassword').value);
       if (success) {
         showApp();
         await navigateTo('dashboard');
@@ -124,6 +124,7 @@ window.App = window.App || {};
       event.preventDefault();
       const success = await App.auth.register(
         ui.get('regName').value,
+        ui.get('regUsername').value,
         ui.get('regEmail').value,
         ui.get('regPassword').value
       );

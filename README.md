@@ -47,9 +47,10 @@ The current version is intentionally focused: track the routine, keep the flow c
 1. Create a Supabase project.
 2. Make sure the required tables exist, including `surahs`, `user_surahs`, `daily_progress`, and `user_profiles`.
 3. Configure RLS policies so users can manage their own data and read the community data required by the app.
-4. Run `supabase-server-time-and-scheduler.sql` in the Supabase SQL Editor to enable server-based day tracking and the automatic scheduler.
-5. Update the Supabase configuration in `public/js/supabase.js`.
-6. Serve the app through a static server or deploy it to your preferred hosting platform.
+4. Run `add-username-login-support.sql` to enable username-based login.
+5. Run `supabase-server-time-and-scheduler.sql` in the Supabase SQL Editor to enable server-based day tracking and the automatic scheduler.
+6. Update the Supabase configuration in `public/js/supabase.js`.
+7. Serve the app through a static server or deploy it to your preferred hosting platform.
 
 ## PWA Support
 

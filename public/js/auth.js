@@ -24,9 +24,23 @@ window.App = window.App || {};
     }
   }
 
-  async function login(email, password) {
+  function normalizeUsername(value) {
+    return String(value || '').trim().toLowerCase();
+  }
+
+  function isValidUsername(username) {
+    return /^[a-z0-9_]{3,24}$/.test(username);
+  }
+
+  async function login(username, password) {
     ui.showLoading(true);
     try {
+      const normalizedUsername = normalizeUsername(username);
+      if (!isValidUsername(normalizedUsername)) {
+        throw new Error('Username harus 3-24 karakter dan hanya boleh berisi huruf, angka, atau underscore.');
+      }
+
+      const email = await App.data.resolveUsernameEmail(normalizedUsername);
       const { data, error } = await App.supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
 
@@ -43,21 +57,27 @@ window.App = window.App || {};
     }
   }
 
-  async function register(fullName, email, password) {
+  async function register(fullName, username, email, password) {
     ui.showLoading(true);
     try {
+      const normalizedUsername = normalizeUsername(username);
+      if (!isValidUsername(normalizedUsername)) {
+        throw new Error('Username harus 3-24 karakter dan hanya boleh berisi huruf, angka, atau underscore.');
+      }
+
       const { data, error } = await App.supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
-            full_name: fullName
+            full_name: fullName,
+            username: normalizedUsername
           }
         }
       });
 
       if (error) throw error;
-      await App.data.saveUserProfile(data.user, fullName);
+      await App.data.saveUserProfile(data.user, fullName, normalizedUsername);
       ui.showToast('Registrasi berhasil. Silakan login.', 'success');
       return true;
     } catch (error) {
