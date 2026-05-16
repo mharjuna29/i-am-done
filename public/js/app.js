@@ -2,7 +2,7 @@ window.App = window.App || {};
 
 (function initApp(App) {
   const ui = App.ui;
-  const APP_VERSION = '1.0.0';
+  const APP_VERSION = '1.2.0';
 
   App.version = APP_VERSION;
 

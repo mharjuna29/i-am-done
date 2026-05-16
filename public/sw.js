@@ -1,4 +1,4 @@
-const CACHE_NAME = 'i-am-done-v4';
+const CACHE_NAME = 'i-am-done-v1.2.0';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -14,6 +14,7 @@ const APP_SHELL = [
   '/js/stats.js',
   '/js/app.js',
   '/assets/manifest.json',
+  '/assets/main-logo.png',
   '/assets/android-chrome.png',
   '/assets/android-chrome2.png',
   '/assets/login-bg.png',

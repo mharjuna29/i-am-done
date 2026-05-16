@@ -1,6 +1,6 @@
 {
   "name": "i-am-done",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "Hafalan Tracker for Ar-Rahman & Rathib Al-Haddad",
   "scripts": {
     "dev": "npx serve public"

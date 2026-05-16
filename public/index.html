@@ -9,8 +9,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
     <link rel="manifest" href="assets/manifest.json">
-    <link rel="icon" type="image/png" sizes="192x192" href="assets/android-chrome.png">
-    <link rel="apple-touch-icon" href="assets/android-chrome2.png">
+    <link rel="icon" type="image/png" sizes="500x500" href="assets/main-logo.png">
+    <link rel="apple-touch-icon" href="assets/main-logo.png">
     <link rel="stylesheet" href="css/style.css">
     <title>I am Done - Hafalan Tracker</title>
 </head>
@@ -18,7 +18,9 @@
 <body>
     <nav class="navbar">
         <div class="nav-container">
-            <button class="logo" type="button" id="logoHomeBtn" aria-label="Go to dashboard">I am Done</button>
+            <button class="logo" type="button" id="logoHomeBtn" aria-label="Go to dashboard">
+                <img src="assets/main-logo.png" alt="I am Done" class="logo-image">
+            </button>
 
             <div class="nav-menu" id="navMenu" hidden>
                 <button class="nav-item" type="button" data-page="dashboard">Dashboard</button>
@@ -46,9 +48,12 @@
     <main class="main-content">
         <section id="authPages" hidden>
             <div class="auth-container" id="loginPage">
+                <div class="auth-brand-panel">
+                    <img src="assets/main-logo.png" alt="I am Done" class="auth-brand-logo">
+                </div>
                 <div class="auth-card">
-                    <h1 class="auth-title">Welcome Back</h1>
-                    <p class="auth-subtitle">Track your daily memorization progress</p>
+                    <h1 class="auth-title">Welcome</h1>
+                    <p class="auth-subtitle">Hopefully today practice will run smoothly and be made easy by Allah SWT</p>
 
                     <form id="loginForm">
                         <div class="form-group">
@@ -69,6 +74,9 @@
             </div>
 
             <div class="auth-container" id="registerPage" hidden>
+                <div class="auth-brand-panel">
+                    <img src="assets/main-logo.png" alt="I am Done" class="auth-brand-logo">
+                </div>
                 <div class="auth-card">
                     <h1 class="auth-title">Create Account</h1>
                     <p class="auth-subtitle">Start your memorization journey</p>
@@ -158,7 +166,7 @@
 
     <footer class="site-footer">
         <div class="footer-container">
-            <span>&copy; <span id="copyrightYear">2026</span> I am Done | Made by ❤️ For My Wife.</span>
+            <span>&copy; <span id="copyrightYear">2026</span> Memorize | Made by ❤️ For My Wife.</span>
             <span class="footer-version">Version <span id="appVersion">-</span></span>
         </div>
     </footer>
