@@ -30,6 +30,7 @@ window.App = window.App || {};
         ui.button('Hapus Surah', 'btn btn-outline btn-block', {
           action: 'delete-surah',
           userSurahId: userSurah.id,
+          surahId: userSurah.surah_id,
           surahName: surah.name
         })
       ]));
@@ -65,7 +66,7 @@ window.App = window.App || {};
     }
   }
 
-  async function deleteSurah(userSurahId, surahName) {
+  async function deleteSurah(userSurahId, surahId, surahName) {
     const confirmed = await App.modals.showConfirmModal({
       icon: '!',
       title: 'Hapus Surah',
@@ -73,7 +74,7 @@ window.App = window.App || {};
         ui.create('p', {}, [
           'Hapus ',
           ui.create('strong', { text: surahName }),
-          ' dari daftar hafalan?'
+          ' dari daftar hafalan beserta semua progress-nya?'
         ])
       ],
       type: 'danger',
@@ -84,7 +85,7 @@ window.App = window.App || {};
 
     ui.showLoading(true);
     try {
-      await App.data.deleteUserSurah(userSurahId);
+      await App.data.deleteUserSurah(userSurahId, surahId);
       await App.data.loadUserData();
       renderSurahsList();
       ui.showToast(`${surahName} dihapus.`, 'success');
@@ -100,7 +101,7 @@ window.App = window.App || {};
     ui.get('surahsList').addEventListener('click', (event) => {
       const button = event.target.closest('button[data-action="delete-surah"]');
       if (!button) return;
-      deleteSurah(button.dataset.userSurahId, button.dataset.surahName);
+      deleteSurah(button.dataset.userSurahId, button.dataset.surahId, button.dataset.surahName);
     });
   }
 

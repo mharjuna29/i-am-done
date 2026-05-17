@@ -119,8 +119,23 @@ window.App = window.App || {};
     if (error) throw error;
   }
 
-  async function deleteUserSurah(userSurahId) {
-    const { error } = await db().from('user_surahs').delete().eq('id', userSurahId);
+  async function deleteUserSurah(userSurahId, surahId) {
+    if (surahId) {
+      const { error: progressError } = await db()
+        .from('daily_progress')
+        .delete()
+        .eq('user_id', state().currentUser.id)
+        .eq('surah_id', surahId);
+
+      if (progressError) throw progressError;
+    }
+
+    const { error } = await db()
+      .from('user_surahs')
+      .delete()
+      .eq('id', userSurahId)
+      .eq('user_id', state().currentUser.id);
+
     if (error) throw error;
   }
 

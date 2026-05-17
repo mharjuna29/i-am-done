@@ -60,8 +60,15 @@ window.App = window.App || {};
 
   function populateSurahSelect() {
     const select = ui.get('newSurahSelect');
-    const userSurahIds = App.state.userSurahs.map((item) => item.surah_id);
-    const availableSurahs = App.state.allSurahs.filter((surah) => !userSurahIds.includes(surah.id));
+    const surahById = new Map(App.state.allSurahs.map((surah) => [surah.id, surah]));
+    const userSurahNames = new Set(
+      App.state.userSurahs
+        .map((item) => surahById.get(item.surah_id)?.name)
+        .filter(Boolean)
+        .map(normalizeSurahName)
+    );
+    const uniqueSurahs = uniqueBySurahName(App.state.allSurahs);
+    const availableSurahs = uniqueSurahs.filter((surah) => !userSurahNames.has(normalizeSurahName(surah.name)));
 
     ui.clear(select);
     select.appendChild(ui.create('option', { text: '-- Pilih Surah --', value: '' }));
@@ -78,6 +85,24 @@ window.App = window.App || {};
     }
 
     return availableSurahs.length;
+  }
+
+  function normalizeSurahName(name) {
+    return String(name || '').trim().toLowerCase().replace(/\s+/g, ' ');
+  }
+
+  function uniqueBySurahName(surahs) {
+    const seenNames = new Set();
+
+    return [...surahs]
+      .filter((surah) => surah?.id && surah?.name)
+      .sort((a, b) => a.name.localeCompare(b.name, 'id'))
+      .filter((surah) => {
+        const key = normalizeSurahName(surah.name);
+        if (seenNames.has(key)) return false;
+        seenNames.add(key);
+        return true;
+      });
   }
 
   function updateSurahPreview() {

@@ -43,9 +43,7 @@ supabase/.temp/
 supabase/.env
 
 # Local database utility scripts
-add-username-login-support.sql
-reset-database-to-initial-state.sql
-supabase-server-time-and-scheduler.sql
+*.sql
 
 # Runtime / temporary files
 tmp/
